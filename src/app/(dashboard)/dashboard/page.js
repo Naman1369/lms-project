@@ -1,6 +1,6 @@
 // app/dashboard/page.js
-import Navbar from '@/src/components/layout/Navbar';
-import CourseCard from '@/src/components/ui/Card';
+import Navbar from '@/src/components/layout/navbar';
+import CourseCard from '@/src/components/global/card';
 
 export default function DashboardPage() {
   return (
