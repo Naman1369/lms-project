@@ -1,6 +1,9 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+// --- 1. Import the connection utility ---
+import connectToDatabase from './utils/mongodb'; // Adjust this path if needed
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -17,6 +20,11 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  // --- 2. Call the function to test the connection ---
+  connectToDatabase()
+    .then(() => console.log('✅ MongoDB connection established'))
+    .catch((err) => console.error('❌ MongoDB connection failed:', err.message));
+
   return (
     <html lang="en">
       <body
