@@ -32,6 +32,7 @@ export async function POST(request) {
     if (users.find(user => user.email === email)) {
       return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 }); // 409 Conflict
     }
+    
 
     // Simulate creating a new user
     const newUser = {
