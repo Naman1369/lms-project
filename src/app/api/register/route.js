@@ -37,9 +37,17 @@ export async function POST(request) {
     console.log('✅ User registered successfully in MongoDB:', newUser.email);
 
     // Return a success response with the user data
+    // This is the end of your 'try' block, right after 'User.create()'
+
+    // --- REPLACE THE OLD 'return' STATEMENT WITH THIS ---
+
+    // Determine redirect message based on user role
+    const dashboardUrl = newUser.role === 'admin' ? '/admin-dashboard' : '/student-dashboard';
+    const redirectMessage = `User registered successfully. Redirecting to ${dashboardUrl}`;
+
     return NextResponse.json(
       { 
-        message: 'User registered successfully',
+        message: redirectMessage,
         user: {
           id: newUser._id.toString(),
           email: newUser.email,

@@ -1,11 +1,10 @@
-// app/api/auth/[...nextauth]/route.js
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-// import User from '@/models/User'; // I will create this model later
-// import { connectToDB } from '@/utils/database'; // I will create this utility later
-// import bcrypt from 'bcryptjs';
+import connectToDatabase from '@/utils/mongodb';
+import User from '@/app/models/User'; // Corrected path
+import bcrypt from 'bcryptjs';
 
-const handler = NextAuth({
+const authOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -14,25 +13,60 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        // This is where i'll add my user authentication logic.
-        // For now, I'll return a mock user to show it's configured.
-        // In the future, I will connect to MongoDB, find the user, and verify the password.
-
-        if (credentials.email === "admin@example.com" && credentials.password === "password") {
-          return { id: "1", name: "Admin User", email: "admin@example.com" };
-        } else {
-          return null; // Authentication failed
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Email and password are required");
         }
+        
+        await connectToDatabase();
+        
+        const user = await User.findOne({ email: credentials.email }).lean();
+        if (!user) {
+          console.log('Login failed: Invalid credentials for', credentials.email);
+          return null;
+        }
+
+        // Securely compare the provided password with the hashed password in the DB
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+
+        if (!isPasswordValid) {
+          console.log('Login failed: Invalid password for', credentials.email);
+          return null;
+        }
+
+        console.log('✅ Login successful for user:', user.email);
+        return {
+          id: user._id.toString(),
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        };
       }
     })
   ],
-  pages: {
-    signIn: '/login', // Direct users to my custom login page
-  },
+  secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: 'jwt',
   },
-  secret: process.env.NEXTAUTH_SECRET,
-});
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id;
+        session.user.role = token.role;
+      }
+      return session;
+    }
+  },
+  pages: {
+    signIn: '/signin',
+  },
+};
 
+const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
