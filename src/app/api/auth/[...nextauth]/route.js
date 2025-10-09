@@ -4,7 +4,7 @@ import connectToDatabase from '@/utils/mongodb';
 import User from '@/app/models/User'; // Corrected path
 import bcrypt from 'bcryptjs';
 
-const authOptions = {
+export const authOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',

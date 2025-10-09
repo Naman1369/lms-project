@@ -2,7 +2,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import connectToDatabase from '@/utils/mongodb';
-import User from '@/app/models/User'; // --- 1. Import the User model ---
+import User from '@/app/models/User';
+import Providers from "@/components/Providers"; // <-- 1. IMPORT THE NEW COMPONENT
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,11 +21,9 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }) {
-  // --- 2. Test connection and model loading ---
   try {
     await connectToDatabase();
     console.log('✅ MongoDB connection established');
-    // The '!!' converts the User object to a boolean (true if it exists, false otherwise)
     console.log('✅ User model loaded successfully:', !!User);
   } catch (error) {
     console.error('❌ Database or Model loading failed:', error.message);
@@ -35,7 +34,10 @@ export default async function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        {/* 2. WRAP YOUR CHILDREN WITH THE PROVIDER */}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
