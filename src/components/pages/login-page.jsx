@@ -1,59 +1,26 @@
 "use client";
-
 import React, { useState } from 'react';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import InputField from '../global/input-field';
 import Button from '../global/button';
-import Card from '../global/card'; // We can use the Card for a nice container
+import Card from '../global/card';
 
 const LoginPage = () => {
-  // State for form inputs, errors, and loading status
   const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  // Update form state on input change
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Handle form submission
-  const handleSubmit = (e) => {
-    e.preventDefault(); // Prevent default form submission
-    setError('');       // Clear previous errors
-    
-    // --- Basic Client-Side Validation ---
-    if (!form.email || !form.password) {
-      setError('Email and password are required.');
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    // Simulate an API call
-    setTimeout(() => {
-      console.log('Form Submitted:', form);
-      // In a real app, you would handle the API response here.
-      // For now, we just log it and reset the loading state.
-      alert(`Simulating login for: ${form.email}`);
-      setIsLoading(false);
-    }, 1000);
-  };
-  
-  /*
-  // NOTE: For future use, here is the advanced handleSubmit from your course material
-  // that connects to NextAuth. You can swap this in when you are ready to connect the backend.
-  
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    
-    if (!form.email || !form.password) {
-      setError('Email and password are required.');
-      return;
-    }
-    
     setIsLoading(true);
-    
+    const loadingToast = toast.loading('Signing you in...');
+
     try {
       const res = await signIn("credentials", { 
         redirect: false, 
@@ -61,57 +28,47 @@ const LoginPage = () => {
         password: form.password
       });
       
+      toast.dismiss(loadingToast);
+
       if (res?.error) {
-        setError("Invalid credentials");
+        toast.error("Invalid credentials. Please try again.");
+        return;
       }
       
       if (res?.ok) {
-        router.push('/dashboard'); // Or role-based redirect
+        toast.success('Login successful! Redirecting...');
+        // We fetch the session to get the role, then redirect.
+        const sessionRes = await fetch('/api/auth/session');
+        const session = await sessionRes.json();
+        const role = session?.user?.role;
+        
+        if (role === 'admin') {
+          router.push('/admin-dashboard');
+        } else {
+          router.push('/student-dashboard');
+        }
       }
     } catch (err) {
-      setError("An unexpected error occurred.");
+      toast.dismiss(loadingToast);
+      toast.error("An unexpected error occurred.");
     } finally {
       setIsLoading(false);
     }
   };
-  */
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
       <Card className="w-full max-w-md">
-        <form onSubmit={handleSubmit}>
-          <h2 className="text-2xl text-black font-bold mb-6 text-center">Sign In</h2>
-          
-          {error && (
-            <div className="mb-4 text-red-600 bg-red-100 p-3 rounded-md text-center text-sm" role="alert">
-              {error}
-            </div>
-          )}
-          
-          <div className="space-y-4">
-            <InputField
-              label="Email"
-              name="email"
-              type="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="you@example.com"
-              disabled={isLoading}
-            />
-            <InputField
-              label="Password"
-              name="password"
-              type="password"
-              value={form.password}
-              onChange={handleChange}
-              placeholder="••••••••"
-              disabled={isLoading}
-            />
-          </div>
-          
-          <Button type="submit" disabled={isLoading} className="w-full mt-6">
-            {isLoading ? 'Signing In...' : 'Sign In'}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <h2 className="text-2xl text-black font-bold text-center">Sign In</h2>
+          <InputField label="Email" name="email" type="email" value={form.email} onChange={handleChange} placeholder="you@example.com" disabled={isLoading} />
+          <InputField label="Password" name="password" type="password" value={form.password} onChange={handleChange} placeholder="••••••••" disabled={isLoading} />
+          <Button type="submit" disabled={isLoading} className="w-full">
+            {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
+          <div className="text-center text-sm text-gray-600">
+            Don&apos;t have an account? <button type="button" onClick={() => router.push('/signup')} className="font-semibold text-teal-600 hover:underline">Sign Up</button>
+          </div>
         </form>
       </Card>
     </div>
